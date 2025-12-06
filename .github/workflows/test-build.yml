@@ -1,4 +1,4 @@
-name: SL3000 Ultimate Test Build
+name: SL3000 Ultimate Fix Build v2
 
 on:
   workflow_dispatch:
@@ -12,7 +12,7 @@ jobs:
 
     steps:
     # ============================
-    # ✅ 1. 拉取你的仓库（只包含 config/mk/dts）
+    # ✅ 1. 拉取你的仓库
     # ============================
     - name: Checkout Your Repo
       uses: actions/checkout@v4
@@ -41,7 +41,7 @@ jobs:
         df -h
 
     # ============================
-    # ✅ 3. 拉取官方 ImmortalWrt 源码（openwrt‑24.10 → Linux 6.6）
+    # ✅ 3. 拉取官方 ImmortalWrt（openwrt‑24.10 → Linux 6.6）
     # ============================
     - name: Clone Official ImmortalWrt
       run: |
@@ -54,18 +54,11 @@ jobs:
     # ============================
     - name: Apply Your Overlay
       run: |
-        echo "=== Copying config ==="
         cp configs/*.config source/.config
-
-        echo "=== Copying DTS ==="
         mkdir -p source/target/linux/mediatek/dts
         cp dts/*.dts source/target/linux/mediatek/dts/
-
-        echo "=== Copying image mk ==="
         mkdir -p source/target/linux/mediatek/image
         cp mk/*.mk source/target/linux/mediatek/image/
-
-        echo "=== Applying patches ==="
         if [ -d patches ]; then
           cp patches/*.patch source/
         fi
@@ -124,29 +117,39 @@ jobs:
         ./scripts/feeds install -a -f
 
     # ============================
-    # ✅ 10. 构建（自动重试 + fallback）
+    # ✅ 10. 单独编译 LLVM（限制线程，避免 OOM）
+    # ============================
+    - name: Prebuild LLVM (Fix OOM)
+      run: |
+        cd source
+        export MAKEFLAGS="-j2"
+        make tools/llvm-bpf/compile V=s
+
+    # ============================
+    # ✅ 11. 编译 world（自动重试 + fallback）
     # ============================
     - name: Build Firmware (Ultimate Retry)
       run: |
         cd source
         mkdir -p logs
 
+        export MAKEFLAGS="-j4"
+
         for i in 1 2 3; do
           echo "=== Build attempt $i ==="
-          timeout 25m make -j$(nproc) && break
+          timeout 40m make && break
           echo "Parallel build failed, retrying single job..."
-          timeout 20m make -j1 V=s && break
+          timeout 40m make -j1 V=s && break
           echo "Attempt $i failed"
         done
 
         if ! ls bin/targets/mediatek/filogic/*sysupgrade*.bin >/dev/null 2>&1; then
           echo "Build failed after 3 attempts"
-          tail -n 200 logs/build.log || true
           exit 1
         fi
 
     # ============================
-    # ✅ 11. 检查固件输出
+    # ✅ 12. 检查固件输出
     # ============================
     - name: Check Firmware Output
       run: |
@@ -155,7 +158,7 @@ jobs:
         ls -lh "$TARGET_DIR"
 
     # ============================
-    # ✅ 12. 上传构建产物（测试验证）
+    # ✅ 13. 上传构建产物（测试验证）
     # ============================
     - name: Upload Test Artifacts
       uses: actions/upload-artifact@v4
