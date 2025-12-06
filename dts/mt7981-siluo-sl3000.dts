@@ -1,0 +1,49 @@
+/dts-v1/;
+
+#include "mt7981.dtsi"
+
+/ {
+    model = "Siluo SL3000";
+    compatible = "siluo,sl3000", "mediatek,mt7981";
+
+    aliases {
+        led-boot = &led_status;
+        led-failsafe = &led_status;
+        led-running = &led_status;
+        led-upgrade = &led_status;
+    };
+
+    chosen {
+        bootargs = "console=ttyS0,115200n8";
+    };
+
+    memory@40000000 {
+        device_type = "memory";
+        reg = <0x40000000 0x20000000>;
+    };
+
+    leds {
+        compatible = "gpio-leds";
+
+        led_status: status {
+            label = "sl3000:blue:status";
+            gpios = <&gpio 10 GPIO_ACTIVE_LOW>;
+        };
+    };
+};
+
+&uart0 {
+    status = "okay";
+};
+
+&eth {
+    status = "okay";
+};
+
+&switch {
+    status = "okay";
+};
+
+&wifi {
+    status = "okay";
+};
