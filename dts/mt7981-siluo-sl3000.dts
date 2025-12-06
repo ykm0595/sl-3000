@@ -10,42 +10,28 @@
         #address-cells = <1>;
         #size-cells = <1>;
 
-        /* 1MB BL2 */
+        /* 32MB kernel */
         partition@0 {
-            label = "bl2";
-            reg = <0x00000000 0x00100000>;
-            read-only;
-        };
-
-        /* 4MB FIP */
-        partition@100000 {
-            label = "fip";
-            reg = <0x00100000 0x00400000>;
-            read-only;
-        };
-
-        /* 64MB kernel */
-        partition@500000 {
             label = "kernel";
-            reg = <0x00500000 0x04000000>;
+            reg = <0x00000000 0x02000000>;
         };
 
         /* 256MB rootfs */
-        partition@4500000 {
+        partition@2000000 {
             label = "rootfs";
-            reg = <0x04500000 0x10000000>;
+            reg = <0x02000000 0x10000000>;
         };
 
-        /* 64MB rootfs_data */
-        partition@14500000 {
+        /* rootfs_data 自动扩容 */
+        partition@12000000 {
             label = "rootfs_data";
-            reg = <0x14500000 0x04000000>;
+            reg = <0x12000000 0x20000000>; /* 512MB 预留，sysupgrade 后自动扩容 */
         };
 
-        /* 剩余空间全部给 userdata（Docker / 下载 / 缓存） */
-        partition@18500000 {
+        /* 剩余全部给 userdata（约 127GB） */
+        partition@32000000 {
             label = "userdata";
-            reg = <0x18500000 0x7E7B0000>; /* 你可以根据实际 eMMC 大小调整 */
+            reg = <0x32000000 0xFFFFFFFF>; /* 自动到磁盘末尾 */
         };
     };
 };
