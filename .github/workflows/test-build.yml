@@ -76,15 +76,15 @@ jobs:
           rsync unzip zlib1g-dev file wget ccache
 
     # -----------------------------
-    # 启用 ccache（5GB）
+    # 启用 ccache（固定 key，SL3000 专用）
     # -----------------------------
     - name: Setup ccache
       uses: actions/cache@v4
       with:
         path: ~/.ccache
-        key: ccache-${{ github.run_id }}
+        key: ccache-${{ runner.os }}-sl3000
         restore-keys: |
-          ccache-
+          ccache-${{ runner.os }}-
 
     - name: Configure ccache
       run: |
@@ -97,6 +97,14 @@ jobs:
         ccache -o compression=true
         ccache -o compression_level=6
         ccache -o sloppiness=file_macro,include_file_mtime,include_file_ctime
+        ccache -s
+
+    # -----------------------------
+    # ✅ 新增：缓存命中率统计（构建前）
+    # -----------------------------
+    - name: Show ccache stats (before build)
+      run: |
+        echo "===== CCACHE STATUS BEFORE BUILD ====="
         ccache -s
 
     # -----------------------------
@@ -141,6 +149,14 @@ jobs:
       run: |
         cd openwrt
         make -j$(nproc) BUILD_LOG=1 || make -j1 V=s
+
+    # -----------------------------
+    # ✅ 新增：缓存命中率统计（构建后）
+    # -----------------------------
+    - name: Show ccache stats (after build)
+      run: |
+        echo "===== CCACHE STATUS AFTER BUILD ====="
+        ccache -s
 
     # -----------------------------
     # 上传构建产物
