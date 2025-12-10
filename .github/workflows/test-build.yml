@@ -110,11 +110,11 @@ jobs:
         ./scripts/feeds install -a
 
     # -----------------------------
-    # 应用你的 .config
+    # 应用你的 .config（修复路径）
     # -----------------------------
     - name: Apply Config
       run: |
-        cp ./sl3000.config ./openwrt/.config
+        cp ./configs/sl3000.config ./openwrt/.config
         cd openwrt
         make defconfig
 
